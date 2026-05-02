@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Attendance Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">Attendance Tracker</p>
+          <h1>Plan your bunk margin before the next class.</h1>
+        </div>
+        <button class="icon-button" id="resetApp" type="button" title="Reset all data" aria-label="Reset all data">
+          <span aria-hidden="true">R</span>
+        </button>
+      </section>
+
+      <section class="summary-grid" aria-label="Attendance summary">
+        <article class="metric-card">
+          <span>Overall</span>
+          <strong id="overallPercent">0%</strong>
+          <small id="overallMeta">No classes yet</small>
+        </article>
+        <article class="metric-card">
+          <span>Attended</span>
+          <strong id="totalAttended">0</strong>
+          <small>classes present</small>
+        </article>
+        <article class="metric-card">
+          <span>Total</span>
+          <strong id="totalClasses">0</strong>
+          <small>classes counted</small>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <form class="panel" id="subjectForm">
+          <div class="panel-heading">
+            <h2>Add subject</h2>
+            <p>Enter your current record once, then update it after each class.</p>
+          </div>
+          <div class="extension-settings" id="extensionSettings" hidden>
+            <label>
+              Attendance page URL
+              <input id="attendanceUrl" type="url" placeholder="https://university.example/attendance">
+            </label>
+            <button class="sync-button" id="saveAttendanceUrl" type="button">Save and auto sync</button>
+            <button class="sync-button secondary-sync" id="syncFromSite" type="button">Sync from open site</button>
+            <p class="sync-status" id="syncStatus">Auto sync runs when you open this extension.</p>
+          </div>
+          <label>
+            Subject name
+            <input id="subjectName" name="subjectName" type="text" placeholder="Maths" autocomplete="off" required>
+          </label>
+          <div class="input-row">
+            <label>
+              Attended
+              <input id="attendedInput" name="attendedInput" type="number" min="0" step="1" value="0" required>
+            </label>
+            <label>
+              Total
+              <input id="totalInput" name="totalInput" type="number" min="0" step="1" value="0" required>
+            </label>
+          </div>
+          <button class="primary-button" type="submit">Add subject</button>
+        </form>
+
+        <section class="panel calculator-panel">
+          <div class="panel-heading">
+            <h2>Target calculator</h2>
+            <p>Check the impact of missed classes and the path to your target.</p>
+          </div>
+          <label>
+            Target attendance
+            <div class="target-control">
+              <input id="targetRange" type="range" min="1" max="100" value="75">
+              <output id="targetOutput" for="targetRange">75%</output>
+            </div>
+          </label>
+          <label>
+            If I miss
+            <div class="stepper">
+              <button type="button" id="decreaseMiss" aria-label="Decrease missed classes">-</button>
+              <input id="missInput" type="number" min="0" step="1" value="1">
+              <button type="button" id="increaseMiss" aria-label="Increase missed classes">+</button>
+            </div>
+          </label>
+        </section>
+      </section>
+
+      <section class="subject-section">
+        <div class="section-heading">
+          <h2>Subjects</h2>
+          <span id="subjectCount">0 subjects</span>
+        </div>
+        <div class="empty-state" id="emptyState">
+          <h3>No attendance records yet</h3>
+          <p>Add your first subject to start calculating percentages, safe misses, and recovery classes.</p>
+        </div>
+        <div class="subject-list" id="subjectList"></div>
+      </section>
+    </main>
+
+    <template id="subjectTemplate">
+      <article class="subject-card">
+        <div class="subject-main">
+          <div>
+            <h3 class="subject-title"></h3>
+            <p class="subject-subtitle"></p>
+          </div>
+          <div class="percent-pill"></div>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="insight-grid">
+          <div>
+            <span>After missing</span>
+            <strong class="after-miss"></strong>
+          </div>
+          <div>
+            <span>Need for target</span>
+            <strong class="needed-classes"></strong>
+          </div>
+          <div>
+            <span>Can miss now</span>
+            <strong class="safe-misses"></strong>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <button type="button" data-action="details">Details</button>
+          <button type="button" data-action="present">Present</button>
+          <button type="button" data-action="absent">Absent</button>
+          <button type="button" data-action="edit">Edit</button>
+          <button type="button" data-action="delete" class="danger">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <dialog id="editDialog">
+      <form method="dialog" class="dialog-card" id="editForm">
+        <div class="panel-heading">
+          <h2>Edit subject</h2>
+          <p>Fix counts manually when your school site updates.</p>
+        </div>
+        <input id="editId" type="hidden">
+        <label>
+          Subject name
+          <input id="editName" type="text" required>
+        </label>
+        <div class="input-row">
+          <label>
+            Attended
+            <input id="editAttended" type="number" min="0" step="1" required>
+          </label>
+          <label>
+            Total
+            <input id="editTotal" type="number" min="0" step="1" required>
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancelEdit">Cancel</button>
+          <button class="primary-button" value="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="detailDialog">
+      <section class="dialog-card detail-dialog">
+        <div class="detail-heading">
+          <div>
+            <h2 id="detailTitle">Attendance detail</h2>
+            <p id="detailMeta"></p>
+          </div>
+          <button type="button" id="closeDetails" aria-label="Close details">X</button>
+        </div>
+        <div class="detail-stats">
+          <div>
+            <span>Present</span>
+            <strong id="detailPresent">0</strong>
+          </div>
+          <div>
+            <span>Absent</span>
+            <strong id="detailAbsent">0</strong>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong id="detailTotal">0</strong>
+          </div>
+        </div>
+        <div class="detail-table-wrap">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Class Type</th>
+                <th>Attendance By</th>
+              </tr>
+            </thead>
+            <tbody id="detailRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

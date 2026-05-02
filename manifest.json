@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Attendance Calculator",
+  "version": "1.0.0",
+  "description": "Track attendance and sync visible records from your university attendance page.",
+  "action": {
+    "default_title": "Attendance Calculator",
+    "default_popup": "index.html"
+  },
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"]
+}
