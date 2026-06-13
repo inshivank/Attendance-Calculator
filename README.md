@@ -1,1 +1,1 @@
-Attendance-Calculator
+Attendance-Calculator(simple)
